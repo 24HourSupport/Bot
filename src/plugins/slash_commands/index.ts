@@ -15,7 +15,12 @@ import type {
 
 import type { Plugin } from '../../types'
 import { logError, logWarning } from '../../logger'
-import { getApplicationCommands, registerCommand } from '../../helpers'
+import {
+  deleteCommand,
+  getApplicationCommands,
+  patchCommand,
+  registerCommand
+} from '../../helpers'
 
 import { Command, Settings } from './schemas'
 import { createTextInput, isAdmin } from './helpers'
@@ -61,6 +66,13 @@ async function loadCommands(): Promise<boolean> {
     commands.set(parsedCommand.data.name, parsedCommand.data)
   }
   return true
+}
+
+async function saveCommands(): Promise<void> {
+  await writeFile(
+    COMMANDS_FILE,
+    JSON.stringify({ commands: Array.from(commands.values()) }, undefined, 2)
+  )
 }
 
 async function registerCustomCommand(client: Client<true>, command: Command) {
@@ -205,11 +217,7 @@ async function addOrModifyCommandFromModal(
     videoAttachments: getField('commandVideos').split('\n').filter(Boolean)
   }
   await registerCustomCommand(modalResponse.client, newCommand)
-  // Write the modified command list to disk
-  await writeFile(
-    COMMANDS_FILE,
-    JSON.stringify({ commands: Array.from(commands.values()) }, undefined, 2)
-  )
+  await saveCommands()
   return { submitInteraction: modalResponse, newCommand }
 }
 
@@ -329,6 +337,83 @@ async function stopBot(
   void interaction.client.destroy()
 }
 
+async function renameCommandHandler(
+  interaction: ChatInputCommandInteraction,
+  settings: Settings['slashCommands']
+): Promise<unknown> {
+  if (!isAdmin(interaction, settings)) {
+    return interaction.reply({
+      content: 'You are not authorized to modify commands!',
+      ephemeral: true
+    })
+  }
+
+  const oldName = interaction.options.getString('old-name', true)
+  const newName = interaction.options.getString('new-name', true)
+
+  const oldLocalCommand = commands.get(oldName)
+  const oldCommand = upstreamCommands.get(oldName)
+  if (!oldCommand || !oldLocalCommand) {
+    return interaction.reply({
+      content: `The provided command (\`/${oldName}\`) does not exist`,
+      ephemeral: true
+    })
+  }
+
+  if (upstreamCommands.has(newName)) {
+    return interaction.reply({
+      content: `A command with the provided new name (${newName}) already exists`,
+      ephemeral: true
+    })
+  }
+
+  const patchedCommand = await patchCommand(interaction.client, oldCommand.id, {
+    name: newName
+  })
+  commands.delete(oldName)
+  commands.set(newName, oldLocalCommand)
+  await saveCommands()
+
+  upstreamCommands.delete(oldName)
+  upstreamCommands.set(newName, patchedCommand)
+
+  return interaction.reply({
+    content: `Renamed command \`/${oldName}\` -> \`/${newName}\``,
+    ephemeral: true
+  })
+}
+
+async function deleteCommandHandler(
+  interaction: ChatInputCommandInteraction,
+  settings: Settings['slashCommands']
+): Promise<unknown> {
+  if (!isAdmin(interaction, settings)) {
+    return interaction.reply({
+      content: 'You are not authorized to modify commands!',
+      ephemeral: true
+    })
+  }
+
+  const name = interaction.options.getString('command-name', true)
+  const command = upstreamCommands.get(name)
+  if (!command || !commands.has(name)) {
+    return interaction.reply({
+      content: `The provided command (\`/${name}\`) does not exist`,
+      ephemeral: true
+    })
+  }
+
+  await deleteCommand(interaction.client, command.id)
+
+  commands.delete(name)
+  await saveCommands()
+
+  return interaction.reply({
+    content: `The command \`/${name}\` was deleted.`,
+    ephemeral: true
+  })
+}
+
 const init: Plugin['init'] = async (client, generalSettings) => {
   const settings = loadSettings(generalSettings)
   if (!settings) {
@@ -380,6 +465,48 @@ const init: Plugin['init'] = async (client, generalSettings) => {
       'Shut down the bot',
       (interaction) => stopBot(interaction, settings.slashCommands),
       { cache: currentCommands }
+    ),
+    registerCommand(
+      client,
+      'rename-command',
+      'Rename a command',
+      (interaction) =>
+        renameCommandHandler(interaction, settings.slashCommands),
+      {
+        cache: currentCommands,
+        options: [
+          {
+            type: ApplicationCommandOptionType.String,
+            name: 'old-name',
+            description: 'The current name of the command',
+            required: true
+          },
+          {
+            type: ApplicationCommandOptionType.String,
+            name: 'new-name',
+            description: 'The new name of the command',
+            required: true
+          }
+        ]
+      }
+    ),
+    registerCommand(
+      client,
+      'delete-command',
+      'Delete a command',
+      (interaction) =>
+        deleteCommandHandler(interaction, settings.slashCommands),
+      {
+        cache: currentCommands,
+        options: [
+          {
+            type: ApplicationCommandOptionType.String,
+            name: 'command-name',
+            description: 'The name of the command to delete',
+            required: true
+          }
+        ]
+      }
     )
   ])
 }

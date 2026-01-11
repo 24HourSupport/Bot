@@ -4,14 +4,12 @@ import type {
   ChatInputCommandInteraction,
   Client,
   Interaction,
-  PermissionsBitField,
   ApplicationCommandOption
 } from 'discord.js'
 
 import { logDebug, logError, logInfo } from './logger'
 
 interface AddOrPatchOptions {
-  permissions?: PermissionsBitField
   options?: ApplicationCommandOption[]
 }
 
@@ -19,7 +17,7 @@ async function addCommand(
   client: Client<true>,
   name: string,
   description: string,
-  { permissions, options }: AddOrPatchOptions = {}
+  { options }: AddOrPatchOptions = {}
 ) {
   return (await client.rest.post(
     Routes.applicationCommands(client.application.id),
@@ -28,27 +26,27 @@ async function addCommand(
         type: ApplicationCommandType.ChatInput,
         name,
         description,
-        default_member_permissions: permissions,
         options
       }
     }
   )) as ApplicationCommand
 }
 
-async function patchCommand(
+export async function patchCommand(
   client: Client<true>,
   commandId: string,
-  description: string,
-  { permissions, options }: AddOrPatchOptions = {}
+  keysToChange: Partial<{
+    name: string
+    description: string
+    options: AddOrPatchOptions['options']
+  }>
 ) {
   return (await client.rest.patch(
     Routes.applicationCommand(client.application.id, commandId),
     {
       body: {
         type: ApplicationCommandType.ChatInput,
-        description,
-        default_member_permissions: permissions,
-        options
+        ...keysToChange
       }
     }
   )) as ApplicationCommand
@@ -102,7 +100,6 @@ function addListenerIfNecessary(client: Client<true>) {
  * @param name The name of the command to add
  * @param description The description of the command to add
  * @param handler The function that gets executed when the command is executed
- * @param permissions The default permissions
  * @param cache A cache for the client's already-added commands, to avoid fetching them again
  * @param options The command's options (parameters)
  * @returns ApplicationCommand The created/modified command
@@ -112,7 +109,7 @@ export async function registerCommand(
   name: string,
   description: string,
   handler: (interaction: ChatInputCommandInteraction) => Promise<unknown>,
-  { permissions, cache, options }: RegisterCommandOptions = {}
+  { cache, options }: RegisterCommandOptions = {}
 ): Promise<ApplicationCommand> {
   logInfo(`Registering command /${name}`)
   // Add/Update the command
@@ -127,7 +124,6 @@ export async function registerCommand(
     // properties of it (if necessary)
     const commandDidChange =
       alreadyAddedCommand.description !== description ||
-      alreadyAddedCommand.defaultMemberPermissions !== permissions ||
       !arrayEquals(
         // NOTE: Type definitions seem to be wrong here, this can be `undefined`
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -141,8 +137,7 @@ export async function registerCommand(
       newlyAddedOrModifiedCommand = await patchCommand(
         client,
         alreadyAddedCommand.id,
-        description,
-        { permissions, options }
+        { description, options }
       )
     } else {
       logDebug(`Command /${name} did not change`)
@@ -152,7 +147,6 @@ export async function registerCommand(
     logDebug(`Adding new command /${name}`)
     // If we don't have a command with this name, add a new one
     newlyAddedOrModifiedCommand = await addCommand(client, name, description, {
-      permissions,
       options
     })
   }
@@ -168,4 +162,13 @@ export async function getApplicationCommands(client: Client<true>) {
   return (await client.rest.get(
     Routes.applicationCommands(client.application.id)
   )) as ApplicationCommand[]
+}
+
+export async function deleteCommand(
+  client: Client<true>,
+  commandId: string
+): Promise<unknown> {
+  return client.rest.delete(
+    Routes.applicationCommand(client.application.id, commandId)
+  )
 }
