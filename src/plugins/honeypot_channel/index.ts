@@ -30,10 +30,9 @@ async function banAndNotify(
 
   if (!harmless) {
     await member.ban({
-      reason: 'Posted in honeypot channel'
+      reason: 'Posted in honeypot channel',
+      deleteMessageSeconds: 60 * 5
     })
-
-    await message.delete()
   }
 
   const notifyChannel = await message.client.channels.fetch(
