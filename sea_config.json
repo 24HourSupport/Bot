@@ -1,0 +1,7 @@
+{
+  "main": "build/index.js",
+  "mainFormat": "commonjs",
+  "output": "dist/24HS-Bot",
+  "disableExperimentalSEAWarning": true,
+  "useCodeCache": true
+}

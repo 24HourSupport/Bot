@@ -7,7 +7,7 @@
     "prestart": "npm run build",
     "start": "node build/index.js",
     "build": "esbuild src/index.ts --platform=node --bundle --target=node18 --outfile=build/index.js",
-    "dist": "npm run build && pkg --target node18 --output dist/24HS-Bot build/index.js --compress GZip",
+    "dist": "npm run build && node --build-sea sea_config.json",
     "clean": "rm -rf build && rm -rf dist",
     "codecheck": "tsc"
   },
@@ -23,7 +23,6 @@
     "esbuild": "^0.19.8",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
-    "pkg": "^5.8.1",
     "prettier": "^3.0.0",
     "typescript": "^5.1.6"
   }
