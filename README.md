@@ -19,6 +19,7 @@ Out of the box:
     * stop - halts all bot processes and scripts, shuts down the bot
 * Adding a "honeypot" channel to catch spam bots - anyone sending a message into the specified channel will be banned
   from the server. A notification is also sent into the specified notify channel.
+    * Note: "dryRun" defaults to true if not set, meaning the bot will not ban users unless you explicitly enable it. 
 
 Example bot_config.json:
 ``` json
@@ -32,6 +33,7 @@ Example bot_config.json:
     "name": "Music"
   },
   "honeypot": {
+    "dryRun": true,
     "guilds": {
       "guildID": {
         "honeypotChannel": "channelID",
