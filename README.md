@@ -17,13 +17,28 @@ Out of the box:
     * add-command - provides a GUI for adding a new command, will be saved to commands.json
     * edit-command - provides a GUI for editing an existing command, changes will update commands.json
     * stop - halts all bot processes and scripts, shuts down the bot
+* Adding a "honeypot" channel to catch spam bots - anyone sending a message into the specified channel will be banned
+  from the server. A notification is also sent into the specified notify channel.
 
 Example bot_config.json:
 ``` json
 {
-    "botToken":"botID",
-    "slashCommands":{"admins":["userID"]},
-    "activity":{"type":2, "name":"Music"}
+  "botToken": "botID",
+  "slashCommands": {
+    "admins": [ "userID" ]
+  },
+  "activity": {
+    "type": 2,
+    "name": "Music"
+  },
+  "honeypot": {
+    "guilds": {
+      "guildID": {
+        "honeypotChannel": "channelID",
+        "notifyChannel": "channelID"
+      }
+    }
+  }
 }
 ```
 ## Troubleshooting
