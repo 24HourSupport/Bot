@@ -32,7 +32,7 @@ async function banAndNotify(
   if (!harmless) {
     await member.ban({
       reason: 'Posted in honeypot channel',
-      deleteMessageSeconds: 60 * 5
+      deleteMessageSeconds: 60 * config.deleteMessageMinutes
     })
   }
 
