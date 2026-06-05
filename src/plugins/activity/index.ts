@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/mini'
 import { ActivityType } from 'discord.js'
 
 import { logInfo } from '../../logger'
@@ -18,7 +18,7 @@ const ActivitySettings = z.object({
   activity: z.object({
     type: ZActivityType,
     name: z.string(),
-    url: z.string().optional()
+    url: z.optional(z.string())
   })
 })
 

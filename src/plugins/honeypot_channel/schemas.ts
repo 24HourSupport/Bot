@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/mini'
 
 const HoneypotEntry = z.object({
   honeypotChannel: z.string(),
@@ -8,7 +8,7 @@ export type HoneypotEntry = z.infer<typeof HoneypotEntry>
 
 export const Settings = z.object({
   honeypot: z.object({
-    dryRun: z.boolean().default(true),
+    dryRun: z._default(z.boolean(), true),
     guilds: z.record(z.string(), HoneypotEntry)
   })
 })

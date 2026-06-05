@@ -24,7 +24,7 @@ import {
 
 import { Command, Settings } from './schemas'
 import { createTextInput, isAdmin } from './helpers'
-import { z } from 'zod'
+import { z } from 'zod/mini'
 
 const name = 'SlashCommands'
 

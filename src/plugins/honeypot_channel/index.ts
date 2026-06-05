@@ -7,10 +7,11 @@ import {
   userMention
 } from 'discord.js'
 import { logError } from '../../logger'
+import { z } from 'zod/mini'
 
 function loadSettings(settings: unknown): Settings | null {
   const result = Settings.safeParse(settings)
-  if (!result.success) console.error(JSON.stringify(result.error.format()))
+  if (!result.success) console.error(z.prettifyError(result.error))
   return result.success ? result.data : null
 }
 
