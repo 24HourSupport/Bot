@@ -38,7 +38,7 @@ async function banAndNotify(
   const notifyChannel = await message.client.channels.fetch(
     config.notifyChannel
   )
-  if (!notifyChannel || !notifyChannel.isTextBased()) return
+  if (!notifyChannel || !notifyChannel.isSendable()) return
   await notifyChannel.send(
     harmless
       ? `Not banning ${userMention(member.id)}  for posting in ${channelMention(
