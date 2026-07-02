@@ -29,6 +29,21 @@ async function banAndNotify(
     PermissionsBitField.Flags.Administrator
   ])
 
+  const notifyChannel = await message.client.channels.fetch(
+    config.notifyChannel
+  )
+
+  let logChannel
+  if (config.logChannel) {
+    logChannel = await message.client.channels.fetch(config.logChannel)
+  } else {
+    logChannel = notifyChannel
+  }
+
+  if (logChannel && logChannel.isSendable()) {
+    await message.forward(logChannel)
+  }
+
   if (!harmless) {
     await member.ban({
       reason: 'Posted in honeypot channel',
@@ -36,9 +51,6 @@ async function banAndNotify(
     })
   }
 
-  const notifyChannel = await message.client.channels.fetch(
-    config.notifyChannel
-  )
   if (!notifyChannel || !notifyChannel.isSendable()) return
   await notifyChannel.send(
     harmless

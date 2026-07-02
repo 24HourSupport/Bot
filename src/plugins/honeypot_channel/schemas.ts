@@ -3,6 +3,7 @@ import { z } from 'zod/mini'
 const HoneypotEntry = z.object({
   honeypotChannel: z.string(),
   notifyChannel: z.string(),
+  logChannel: z._default(z.nullable(z.string()), null),
   deleteMessageMinutes: z._default(z.number(), 60)
 })
 export type HoneypotEntry = z.infer<typeof HoneypotEntry>
