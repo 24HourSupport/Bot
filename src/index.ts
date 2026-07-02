@@ -16,7 +16,7 @@ async function main() {
     ]
   })
 
-  client.once('ready', async (client) => {
+  client.once('clientReady', async (client) => {
     await Promise.allSettled(
       enabledPlugins.map((plugin) => plugin.init(client, settings))
     )

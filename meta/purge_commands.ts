@@ -12,7 +12,7 @@ async function main() {
     ]
   })
 
-  client.once('ready', async () => {
+  client.once('clientReady', async () => {
     await client.rest.put(
       Routes.applicationCommands((client as Client<true>).application.id),
       { body: [] }
